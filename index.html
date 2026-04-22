@@ -31,6 +31,22 @@
       margin: 0 auto;
       padding: 28px;
     }
+    .mobile-toolbar {
+      display: none;
+      gap: 10px;
+      margin-top: 16px;
+    }
+    .tool-btn {
+      appearance: none;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.04);
+      color: var(--text);
+      border-radius: 14px;
+      padding: 12px 14px;
+      font-size: 14px;
+      font-weight: 600;
+      min-height: 46px;
+    }
     .hero {
       display: grid;
       grid-template-columns: 1.1fr 1.4fr;
@@ -89,11 +105,19 @@
       min-height: 620px;
       overflow: hidden;
       position: relative;
+      touch-action: none;
     }
     #viewer {
       width: 100%;
       height: 100%;
       min-height: 620px;
+      touch-action: none;
+    }
+    #viewer canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
     }
     .overlay {
       position: absolute;
@@ -114,7 +138,7 @@
     .overlay .desc { color: var(--muted); font-size: 14px; }
     .controls {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 16px;
       margin-top: 18px;
     }
@@ -127,6 +151,8 @@
       border-radius: 20px;
       color: var(--text);
       transition: transform .16s ease, border-color .16s ease, background .16s ease;
+      min-height: 108px;
+      -webkit-tap-highlight-color: transparent;
     }
     .model-btn:hover, .model-btn.active {
       transform: translateY(-2px);
@@ -144,8 +170,59 @@
     a { color: var(--accent); }
     @media (max-width: 1050px) {
       .hero { grid-template-columns: 1fr; }
-      .controls { grid-template-columns: 1fr; }
       #viewer, #viewerCard { min-height: 520px; }
+    }
+    @media (max-width: 720px) {
+      .wrap {
+        padding: 14px;
+      }
+      .info {
+        padding: 20px;
+      }
+      h1 {
+        font-size: clamp(30px, 9vw, 42px);
+        line-height: 1;
+      }
+      .lede {
+        font-size: 16px;
+      }
+      .mobile-toolbar {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+      #viewer, #viewerCard {
+        min-height: min(58vh, 460px);
+      }
+      .overlay {
+        left: 12px;
+        right: 12px;
+        bottom: 12px;
+        padding: 12px 14px;
+        gap: 10px;
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .controls {
+        display: grid;
+        grid-auto-flow: column;
+        grid-auto-columns: 84%;
+        overflow-x: auto;
+        overscroll-behavior-x: contain;
+        scroll-snap-type: x proximity;
+        padding-bottom: 6px;
+      }
+      .controls::-webkit-scrollbar {
+        height: 8px;
+      }
+      .controls::-webkit-scrollbar-thumb {
+        background: rgba(255,255,255,0.18);
+        border-radius: 999px;
+      }
+      .model-btn {
+        scroll-snap-align: start;
+        min-height: 96px;
+        padding: 16px;
+      }
     }
   </style>
 </head>
@@ -167,8 +244,13 @@
         </div>
         <div class="meta">
           <div><strong>Built for:</strong> James</div>
-          <div><strong>How to use:</strong> Click a model card, then drag in the viewer.</div>
-          <div><strong>Tip:</strong> Double-click the background to reset the camera.</div>
+          <div><strong>How to use:</strong> Tap a model card, then drag in the viewer.</div>
+          <div><strong>Tip:</strong> Pinch to zoom, drag with one finger to orbit, and use reset if you lose the camera.</div>
+        </div>
+        <div class="mobile-toolbar">
+          <button class="tool-btn" id="prevModel" type="button">◀ Prev</button>
+          <button class="tool-btn" id="resetView" type="button">Reset</button>
+          <button class="tool-btn" id="nextModel" type="button">Next ▶</button>
         </div>
       </div>
       <div class="card" id="viewerCard">
@@ -203,16 +285,27 @@
     </footer>
   </div>
 
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.1/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.1/examples/jsm/"
+      }
+    }
+  </script>
   <script type="module">
-    import * as THREE from 'https://unpkg.com/three@0.160.1/build/three.module.js';
-    import { OrbitControls } from 'https://unpkg.com/three@0.160.1/examples/jsm/controls/OrbitControls.js';
-    import { GLTFLoader } from 'https://unpkg.com/three@0.160.1/examples/jsm/loaders/GLTFLoader.js';
-    import { RoomEnvironment } from 'https://unpkg.com/three@0.160.1/examples/jsm/environments/RoomEnvironment.js';
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
     const viewer = document.getElementById('viewer');
     const nameEl = document.getElementById('modelName');
     const descEl = document.getElementById('modelDesc');
     const buttons = [...document.querySelectorAll('.model-btn')];
+    const prevBtn = document.getElementById('prevModel');
+    const nextBtn = document.getElementById('nextModel');
+    const resetBtn = document.getElementById('resetView');
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x09090b);
@@ -222,7 +315,7 @@
     camera.position.set(3.4, 2.0, 4.6);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, window.innerWidth <= 720 ? 1.5 : 2));
     renderer.setSize(viewer.clientWidth, viewer.clientHeight);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -261,30 +354,40 @@
     controls.minDistance = 2.2;
     controls.maxDistance = 10;
     controls.target.set(0, 0.5, 0);
+    controls.enablePan = window.innerWidth > 720;
+    controls.touches.ONE = THREE.TOUCH.ROTATE;
+    controls.touches.TWO = THREE.TOUCH.DOLLY_PAN;
 
     const loader = new GLTFLoader();
     let current = null;
-    let currentBox = null;
+    let currentIndex = 0;
 
     function frameObject(object) {
       const box = new THREE.Box3().setFromObject(object);
       const size = box.getSize(new THREE.Vector3());
       const center = box.getCenter(new THREE.Vector3());
-      currentBox = box;
 
       object.position.sub(center);
       object.position.y -= box.min.y;
       object.position.y -= size.y * 0.5;
 
+      const isMobile = window.innerWidth <= 720;
       const maxDim = Math.max(size.x, size.y, size.z) || 1;
-      const dist = maxDim * 2.6;
-      camera.position.set(dist * 0.9, dist * 0.55, dist);
+      const dist = maxDim * (isMobile ? 3.1 : 2.6);
+      camera.position.set(dist * (isMobile ? 0.62 : 0.9), dist * (isMobile ? 0.72 : 0.55), dist);
       controls.target.set(0, size.y * 0.18, 0);
       controls.update();
     }
 
     function setActive(btn) {
       buttons.forEach(b => b.classList.toggle('active', b === btn));
+      btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      currentIndex = buttons.indexOf(btn);
+    }
+
+    function loadModelByIndex(index) {
+      const btn = buttons[(index + buttons.length) % buttons.length];
+      if (btn) loadModel(btn);
     }
 
     function loadModel(btn) {
@@ -308,15 +411,23 @@
     }
 
     buttons.forEach(btn => btn.addEventListener('click', () => loadModel(btn)));
+    prevBtn.addEventListener('click', () => loadModelByIndex(currentIndex - 1));
+    nextBtn.addEventListener('click', () => loadModelByIndex(currentIndex + 1));
+    resetBtn.addEventListener('click', () => {
+      if (current) frameObject(current);
+    });
 
     viewer.addEventListener('dblclick', () => {
       if (current) frameObject(current);
     });
 
     window.addEventListener('resize', () => {
+      controls.enablePan = window.innerWidth > 720;
       camera.aspect = viewer.clientWidth / viewer.clientHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(viewer.clientWidth, viewer.clientHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, window.innerWidth <= 720 ? 1.5 : 2));
+      if (current) frameObject(current);
     });
 
     const clock = new THREE.Clock();
