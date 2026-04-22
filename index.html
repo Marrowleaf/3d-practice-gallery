@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Herms 3D Practice Gallery</title>
+  <style>
+    :root {
+      --bg: #09090b;
+      --panel: rgba(24, 24, 27, 0.72);
+      --panel-strong: rgba(39, 39, 42, 0.9);
+      --text: #f4f4f5;
+      --muted: #a1a1aa;
+      --accent: #67e8f9;
+      --accent2: #f59e0b;
+      --border: rgba(255,255,255,0.09);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top, rgba(103,232,249,0.12), transparent 34%),
+        radial-gradient(circle at 80% 20%, rgba(245,158,11,0.10), transparent 28%),
+        linear-gradient(180deg, #09090b, #111827 55%, #09090b);
+      font-family: Inter, system-ui, sans-serif;
+      min-height: 100vh;
+    }
+    .wrap {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 28px;
+    }
+    .hero {
+      display: grid;
+      grid-template-columns: 1.1fr 1.4fr;
+      gap: 22px;
+      align-items: stretch;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      backdrop-filter: blur(18px);
+      box-shadow: 0 12px 60px rgba(0,0,0,0.35);
+    }
+    .info {
+      padding: 28px;
+    }
+    .eyebrow {
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      font-size: 12px;
+      margin-bottom: 14px;
+    }
+    h1 {
+      margin: 0 0 10px;
+      font-size: clamp(34px, 5vw, 58px);
+      line-height: 0.95;
+    }
+    .lede {
+      color: var(--muted);
+      font-size: 18px;
+      line-height: 1.5;
+      margin-bottom: 22px;
+    }
+    .chips {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 22px;
+    }
+    .chip {
+      border: 1px solid var(--border);
+      color: #e4e4e7;
+      background: rgba(255,255,255,0.03);
+      padding: 10px 14px;
+      border-radius: 999px;
+      font-size: 14px;
+    }
+    .meta {
+      display: grid;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    #viewerCard {
+      min-height: 620px;
+      overflow: hidden;
+      position: relative;
+    }
+    #viewer {
+      width: 100%;
+      height: 100%;
+      min-height: 620px;
+    }
+    .overlay {
+      position: absolute;
+      left: 18px;
+      right: 18px;
+      bottom: 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 18px;
+      background: rgba(0,0,0,0.34);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 18px;
+      padding: 14px 18px;
+      backdrop-filter: blur(12px);
+    }
+    .overlay .name { font-weight: 700; }
+    .overlay .desc { color: var(--muted); font-size: 14px; }
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-top: 18px;
+    }
+    .model-btn {
+      cursor: pointer;
+      padding: 18px;
+      text-align: left;
+      background: var(--panel-strong);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      color: var(--text);
+      transition: transform .16s ease, border-color .16s ease, background .16s ease;
+    }
+    .model-btn:hover, .model-btn.active {
+      transform: translateY(-2px);
+      border-color: rgba(103,232,249,0.5);
+      background: rgba(8, 47, 73, 0.65);
+    }
+    .model-title { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+    .model-sub { color: var(--muted); font-size: 14px; line-height: 1.4; }
+    footer {
+      color: var(--muted);
+      text-align: center;
+      padding: 22px 0 8px;
+      font-size: 14px;
+    }
+    a { color: var(--accent); }
+    @media (max-width: 1050px) {
+      .hero { grid-template-columns: 1fr; }
+      .controls { grid-template-columns: 1fr; }
+      #viewer, #viewerCard { min-height: 520px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <div class="card info">
+        <div class="eyebrow">3D practice lab</div>
+        <h1>Herms built you a tiny 3D gallery.</h1>
+        <p class="lede">
+          Three quick practice models, one interactive viewer. Drag to orbit, scroll to zoom,
+          and swap between a glowing crystal, a sci-fi drone, and a fantasy sword.
+        </p>
+        <div class="chips">
+          <span class="chip">GLB models</span>
+          <span class="chip">Three.js viewer</span>
+          <span class="chip">Orbit controls</span>
+          <span class="chip">Dark UI</span>
+        </div>
+        <div class="meta">
+          <div><strong>Built for:</strong> James</div>
+          <div><strong>How to use:</strong> Click a model card, then drag in the viewer.</div>
+          <div><strong>Tip:</strong> Double-click the background to reset the camera.</div>
+        </div>
+      </div>
+      <div class="card" id="viewerCard">
+        <div id="viewer"></div>
+        <div class="overlay">
+          <div>
+            <div class="name" id="modelName">Arcane Crystal</div>
+            <div class="desc" id="modelDesc">A glowing magical shard cluster mounted on a stone base.</div>
+          </div>
+          <div class="desc">Drag • Zoom • Pan</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="controls">
+      <button class="model-btn active" data-model="models/arcane_crystal.glb" data-name="Arcane Crystal" data-desc="A glowing magical shard cluster mounted on a stone base.">
+        <div class="model-title">Arcane Crystal</div>
+        <div class="model-sub">Stylised fantasy prop with emissive cyan crystal shards.</div>
+      </button>
+      <button class="model-btn" data-model="models/sky_drone.glb" data-name="Sky Drone" data-desc="A compact hovering scout drone with glowing propulsion rings.">
+        <div class="model-title">Sky Drone</div>
+        <div class="model-sub">Quick sci-fi practice piece with metal bodywork and engine rings.</div>
+      </button>
+      <button class="model-btn" data-model="models/emberblade.glb" data-name="Emberblade" data-desc="A fantasy sword with a gold crossguard and polished steel blade.">
+        <div class="model-title">Emberblade</div>
+        <div class="model-sub">Hero prop practice: sword silhouette, metal materials, fantasy colours.</div>
+      </button>
+    </section>
+
+    <footer>
+      Made by Herms. Source models are procedurally generated and bundled in this little site.
+    </footer>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'https://unpkg.com/three@0.160.1/build/three.module.js';
+    import { OrbitControls } from 'https://unpkg.com/three@0.160.1/examples/jsm/controls/OrbitControls.js';
+    import { GLTFLoader } from 'https://unpkg.com/three@0.160.1/examples/jsm/loaders/GLTFLoader.js';
+    import { RoomEnvironment } from 'https://unpkg.com/three@0.160.1/examples/jsm/environments/RoomEnvironment.js';
+
+    const viewer = document.getElementById('viewer');
+    const nameEl = document.getElementById('modelName');
+    const descEl = document.getElementById('modelDesc');
+    const buttons = [...document.querySelectorAll('.model-btn')];
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x09090b);
+    scene.fog = new THREE.Fog(0x09090b, 8, 20);
+
+    const camera = new THREE.PerspectiveCamera(45, viewer.clientWidth / viewer.clientHeight, 0.1, 100);
+    camera.position.set(3.4, 2.0, 4.6);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(viewer.clientWidth, viewer.clientHeight);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.25;
+    viewer.appendChild(renderer.domElement);
+
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    scene.environment = pmrem.fromScene(new RoomEnvironment(renderer), 0.04).texture;
+
+    const hemi = new THREE.HemisphereLight(0x9dd6ff, 0x1f1f1f, 1.2);
+    scene.add(hemi);
+
+    const key = new THREE.DirectionalLight(0xfff1d6, 2.2);
+    key.position.set(4, 6, 3);
+    scene.add(key);
+
+    const rim = new THREE.PointLight(0x67e8f9, 16, 20, 2);
+    rim.position.set(-3.5, 1.8, -2.2);
+    scene.add(rim);
+
+    const ember = new THREE.PointLight(0xf97316, 15, 16, 2);
+    ember.position.set(2.5, 1.4, 2.2);
+    scene.add(ember);
+
+    const floor = new THREE.Mesh(
+      new THREE.CircleGeometry(6, 64),
+      new THREE.MeshStandardMaterial({ color: 0x151515, metalness: 0.15, roughness: 0.82 })
+    );
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.y = -1.55;
+    scene.add(floor);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.06;
+    controls.minDistance = 2.2;
+    controls.maxDistance = 10;
+    controls.target.set(0, 0.5, 0);
+
+    const loader = new GLTFLoader();
+    let current = null;
+    let currentBox = null;
+
+    function frameObject(object) {
+      const box = new THREE.Box3().setFromObject(object);
+      const size = box.getSize(new THREE.Vector3());
+      const center = box.getCenter(new THREE.Vector3());
+      currentBox = box;
+
+      object.position.sub(center);
+      object.position.y -= box.min.y;
+      object.position.y -= size.y * 0.5;
+
+      const maxDim = Math.max(size.x, size.y, size.z) || 1;
+      const dist = maxDim * 2.6;
+      camera.position.set(dist * 0.9, dist * 0.55, dist);
+      controls.target.set(0, size.y * 0.18, 0);
+      controls.update();
+    }
+
+    function setActive(btn) {
+      buttons.forEach(b => b.classList.toggle('active', b === btn));
+    }
+
+    function loadModel(btn) {
+      const url = btn.dataset.model;
+      nameEl.textContent = btn.dataset.name;
+      descEl.textContent = btn.dataset.desc;
+      setActive(btn);
+
+      loader.load(url, (gltf) => {
+        if (current) scene.remove(current);
+        current = gltf.scene;
+        current.traverse((obj) => {
+          if (obj.isMesh) {
+            obj.castShadow = true;
+            obj.receiveShadow = true;
+          }
+        });
+        scene.add(current);
+        frameObject(current);
+      });
+    }
+
+    buttons.forEach(btn => btn.addEventListener('click', () => loadModel(btn)));
+
+    viewer.addEventListener('dblclick', () => {
+      if (current) frameObject(current);
+    });
+
+    window.addEventListener('resize', () => {
+      camera.aspect = viewer.clientWidth / viewer.clientHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(viewer.clientWidth, viewer.clientHeight);
+    });
+
+    const clock = new THREE.Clock();
+    function animate() {
+      requestAnimationFrame(animate);
+      const t = clock.getElapsedTime();
+      if (current) current.rotation.y = Math.sin(t * 0.6) * 0.18 + t * 0.22;
+      rim.intensity = 14 + Math.sin(t * 2.5) * 2;
+      ember.intensity = 13 + Math.sin(t * 3.1 + 1.4) * 2.5;
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    loadModel(buttons[0]);
+    animate();
+  </script>
+</body>
+</html>
